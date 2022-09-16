@@ -1,5 +1,4 @@
-const { EASY_WORDS_TO_GUESS, HANGMAN_PICS, HARD_WORDS_TO_GUESS} = require('./constants');
-const constants = require('./constants');
+const { EASY_WORDS_TO_GUESS, HANGMAN_PICS, HARD_WORDS_TO_GUESS } = require('./constants');
 // In node.js: install a prompt library by running: `uz` in the current folder
 const prompt = require("prompt-sync")();
 
@@ -12,20 +11,30 @@ Have fun! :)
 `)
 
 //Choosing random word by level of difficulty
-    let randomWords = [];
-    let answer = prompt("Choose difficulty: ");
+let randomWords = [];
+let answer = prompt("Choose difficulty: ");
 
-        if (answer === "easy") {
-            randomWords= EASY_WORDS_TO_GUESS[Math.floor(Math.random() * EASY_WORDS_TO_GUESS.length)];
-            //lives = 6;
-        } else if (answer === "hard") {
-            randomWords = HARD_WORDS_TO_GUESS[Math.floor(Math.random() * HARD_WORDS_TO_GUESS.length)];
-            //lives = 3;
-        } 
+while (answer !== "easy" && answer !== "hard") {
+    console.log("invalid input");
+    answer = prompt("Choose difficulty: ");
+}
 
-let word = randomWords;
+let wordsForDifficulty;
+if (answer === "easy") {
+    wordsForDifficulty = EASY_WORDS_TO_GUESS;
+    //lives = 6; // TODO: Implement different lives for different levels
+} else if (answer === "hard") {
+    wordsForDifficulty = HARD_WORDS_TO_GUESS;
+    //lives = 3;
+}
+
+const word = wordsForDifficulty[Math.floor(Math.random() * wordsForDifficulty.length)];
+
 let lives = 6;
 let gameStatus = [];
+let wrongGuessed = [];
+let alreadyGuessed = [];
+let correctLetters = [];
 
 //display missing letters
 for (let i = 0; i < word.length; i++) {
@@ -33,58 +42,68 @@ for (let i = 0; i < word.length; i++) {
 }
 console.log(gameStatus.join(' '));
 
-
-let wrongGuessed = [];
-let alreadyGuessed = [];
-let correctLetters = [];
-
-
 //              *** Game Flow ***
 
 while (lives > 0) {
-    let guess = prompt("Type in a letter: ").toLocalCase();
-    let guessedMatch = true;
-    let wordIndex = 0;
-    //let repeatedLetters = 0;
+    let guess = prompt("Type in a letter: ").toLowerCase();
     if (guess == 'quit') {
         break;
-    } else if (guess.length !== 1) {
+    }
+
+    if (guess.length !== 1) {
         console.log("Please enter a single letter.");
-    } else {
-        // checking for repeated letters
-        for (let k=0; k <= alreadyGuessed.length; k++ ) {
-            if(alreadyGuessed[k] === guess) {
-                console.log("You already tried that!");
-                repeatedLetters = k;
-                lives++;
-                break;
-            } 
+        continue;
+    }
+
+    // ALTERNATIVE
+    // while (guess.length !== 1) {
+    //     console.log("Please enter a single letter.");
+    //     guess = prompt("Type in a letter: ").toLowerCase();
+    // }
+
+    let isRepeated = false;
+
+    // checking for repeated letters
+    for (let k=0; k <= alreadyGuessed.length; k++ ) {
+        if(alreadyGuessed[k] === guess) {
+            console.log("You already tried that!");
+            lives++;
+            isRepeated = true;
+            break;
+        } 
+    }
+
+    if (isRepeated) {
+        continue;
+    }
+
+    let guessedMatch = false;
+    let wordIndexes = [];
+
+    //checking if input letter matches any letters of the word
+    for (let j = 0; j < word.length; j++){
+        if (word[j] === guess) {
+            guessedMatch = true;
+            wordIndexes.push(j);
+        } 
+    }
+    
+    if (guessedMatch) {
+        for (let i = 0; i < wordIndexes.length; i++) {
+            gameStatus[wordIndexes[i]] = guess;
         }
-       
-        //checking if input letter matches any letters of the word
-        for (let j = 0; j < word.length; j++){
-            if(word[j] === guess){
-               guessedMatch = true;
-               wordIndex = j;
-                break;
-            } else if(word[j] !== guess) {
-                guessedMatch = false;
-            } 
-        
-        }  if(guessedMatch === true) {
-            gameStatus[wordIndex] = guess;
-            console.log("You've guessed right! Go on!");
-            console.log("Lives left: "+lives);
-            correctLetters.push(guess);
+
+        console.log("You've guessed right! Go on!");
+        console.log("Lives left: "+lives);
+        correctLetters.push(guess);
          
-        } else if (guessedMatch === false){
-            lives = lives - 1;
-            console.log("Lives left: "+lives);
-            wrongGuessed.push(guess);
-            console.log("Wrong guesses: "+wrongGuessed);
-        }
-        alreadyGuessed.push(guess);
-    } 
+    } else {
+        lives = lives - 1;
+        console.log("Lives left: " + lives);
+        wrongGuessed.push(guess);
+        console.log("Wrong guesses: " + wrongGuessed);
+    }
+    alreadyGuessed.push(guess);
 
     //Display of hangman pics based on lives
     console.log(HANGMAN_PICS[lives]);
